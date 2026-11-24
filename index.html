@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213d">
+<title>Flip 7 Punkte</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#0f1a30; --panel:#18264a; --panel2:#22345f; --text:#f3f5fa; --muted:#9fb0d0;
+  --accent:#ffcc33; --accent-text:#1a1400; --good:#3ddc97; --bad:#ff5d6c; --mod:#4fc3f7; --x2:#c58cff;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+input{font:inherit}
+.wrap{max-width:560px;margin:0 auto;padding:12px 16px 110px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 14px}
+h1{font-size:22px;margin:0;letter-spacing:.3px}
+h1 b{color:var(--accent)}
+h2{font-size:15px;color:var(--muted);font-weight:600;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.6px}
+.sub{color:var(--muted);font-size:14px}
+.btn{background:var(--panel2);padding:12px 16px;border-radius:12px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-text)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn.ghost{background:transparent;color:var(--muted);padding:8px 10px}
+.btn:disabled{opacity:.4}
+.bar{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 16px calc(14px + env(safe-area-inset-bottom))}
+.bar .in{max-width:560px;margin:0 auto;display:flex;gap:10px}
+.bar .btn{flex:1;padding:16px;font-size:17px}
+.card{background:var(--panel);border-radius:var(--radius);padding:12px 14px}
+.list{display:flex;flex-direction:column;gap:8px}
+
+/* Setup */
+.prow{display:flex;gap:8px;align-items:center}
+.prow input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--panel2);color:var(--text);border-radius:12px;padding:12px}
+.prow .btn{padding:12px 14px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.field input{width:100px;text-align:right;background:var(--panel2);border:0;color:var(--text);border-radius:10px;padding:10px}
+
+/* Scoreboard */
+.player{display:grid;grid-template-columns:28px 1fr auto;gap:4px 10px;align-items:center}
+.rank{font-weight:700;color:var(--muted);text-align:center}
+.player.lead .rank{color:var(--accent)}
+.pname{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pname small{color:var(--muted);font-weight:400}
+.total{font-size:26px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.progress{grid-column:2 / 4;height:6px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.last{font-size:13px;color:var(--muted)}
+.last.b{color:var(--bad)}
+.last.f7{color:var(--good)}
+.banner{background:var(--accent);color:var(--accent-text);border-radius:var(--radius);padding:14px;margin-bottom:12px;font-weight:700;text-align:center}
+.banner.tie{background:var(--panel2);color:var(--text)}
+
+/* History */
+.hist{overflow-x:auto;border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:9px 8px;text-align:right;white-space:nowrap;font-size:14px}
+th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}
+th:first-child,td:first-child{text-align:left;color:var(--muted)}
+tbody tr{border-top:1px solid var(--panel2)}
+tbody tr:active{background:var(--panel2)}
+td.b{color:var(--bad)} td.f7{color:var(--good);font-weight:700}
+
+/* Round editor */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+.chip{flex:0 0 auto;background:var(--panel);padding:7px 11px;border-radius:999px;font-size:14px;display:flex;gap:6px;align-items:center}
+.chip.on{background:var(--accent);color:var(--accent-text);font-weight:700}
+.chip .s{opacity:.75;font-variant-numeric:tabular-nums}
+.chip.bust .s{color:var(--bad)}
+.chip.on.bust .s{color:#8a0010}
+.who{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:6px 0 12px}
+.who .n{font-size:24px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who .sc{font-size:44px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.who .sc.b{color:var(--bad)}
+.calc{color:var(--muted);font-size:13px;min-height:18px;margin:-4px 0 10px;text-align:right}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.num{aspect-ratio:1/1.15;border-radius:12px;background:var(--panel);font-size:24px;font-weight:800;border:2px solid transparent}
+.num.on{background:#fff;color:#0f1a30;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.num:disabled{opacity:.3}
+.mods{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+.mod{padding:14px 0;border-radius:12px;background:var(--panel);font-weight:800;color:var(--mod)}
+.mod.x2{color:var(--x2)}
+.mod.on{background:var(--mod);color:#00202e}
+.mod.x2.on{background:var(--x2);color:#1d0033}
+.locked .num,.locked .mod{opacity:.3;pointer-events:none}
+.tools{display:flex;gap:8px;margin-top:12px}
+.tools .btn{flex:1}
+.bust-btn.on{background:var(--bad);color:#fff}
+.f7badge{display:inline-block;background:var(--good);color:#002b19;font-weight:800;border-radius:8px;padding:2px 8px;font-size:13px;margin-left:6px;vertical-align:middle}
+.hint{color:var(--muted);font-size:13px;margin-top:14px;text-align:center}
+.menu{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.menu .btn{flex:1 1 45%}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+"use strict";
+const KEY = "flip7-v1";
+const NUMS = Array.from({length:13}, (_, i) => i);
+const MODS = [2, 4, 6, 8, 10];
+
+// ---------- Zustand ----------
+let state = load() || { players: [], rounds: [], target: 200 };
+let view = state.players.length ? "board" : "setup";
+let draft = null;      // { hands: {id: hand}, idx: Spielerindex, edit: Rundenindex|null }
+let setupNames = null; // Namen beim Bearbeiten der Spieler
+
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+const uid = () => Math.random().toString(36).slice(2, 9);
+const emptyHand = () => ({ n: [], m: [], x2: false, bust: false });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+
+// ---------- Punkteberechnung nach Flip-7-Regeln ----------
+// Zahlenkarten summieren, x2 verdoppelt nur die Zahlen, dann +Modifikatoren, Flip 7 (7 Zahlen) +15. Bust = 0.
+function score(h){
+  if (!h || h.bust) return 0;
+  let s = h.n.reduce((a, b) => a + b, 0);
+  if (h.x2) s *= 2;
+  s += h.m.reduce((a, b) => a + b, 0);
+  if (h.n.length === 7) s += 15;
+  return s;
+}
+function calcText(h){
+  if (h.bust) return "Bust: 0 Punkte";
+  if (!h.n.length && !h.m.length) return "";
+  const sum = h.n.reduce((a, b) => a + b, 0);
+  let t = h.n.length ? `${[...h.n].sort((a,b)=>a-b).join(" + ")} = ${sum}` : "0";
+  if (h.x2) t = `(${t}) × 2 = ${sum * 2}`;
+  h.m.slice().sort((a,b)=>a-b).forEach(m => t += ` + ${m}`);
+  if (h.n.length === 7) t += " + 15 (Flip 7)";
+  return t;
+}
+const totals = () => {
+  const t = Object.fromEntries(state.players.map(p => [p.id, 0]));
+  state.rounds.forEach(r => state.players.forEach(p => t[p.id] += score(r.hands[p.id])));
+  return t;
+};
+function gameStatus(){
+  const t = totals();
+  const max = Math.max(0, ...Object.values(t));
+  if (max < state.target || !state.rounds.length) return null;
+  const top = state.players.filter(p => t[p.id] === max);
+  return { winners: top, score: max };
+}
+
+// ---------- Render ----------
+const app = document.getElementById("app");
+function render(){
+  if (view === "setup") renderSetup();
+  else if (view === "round") renderRound();
+  else renderBoard();
+}
+
+function renderSetup(){
+  if (!setupNames) setupNames = state.players.length ? state.players.map(p => ({...p})) : [{id:uid(),name:""},{id:uid(),name:""}];
+  const editing = state.players.length > 0;
+  app.innerHTML = `
+    <header><h1><b>Flip 7</b> Punkte</h1>${editing ? `<button class="btn ghost" data-a="cancelSetup">Abbrechen</button>` : ""}</header>
+    <h2>Spieler (in Sitzreihenfolge)</h2>
+    <div class="list">
+      ${setupNames.map((p, i) => `
+        <div class="prow">
+          <input value="${esc(p.name)}" placeholder="Spieler ${i+1}" data-i="${i}" enterkeyhint="next" autocomplete="off">
+          <button class="btn" data-a="up" data-i="${i}" ${i===0?"disabled":""} aria-label="nach oben">↑</button>
+          <button class="btn" data-a="del" data-i="${i}" aria-label="entfernen">✕</button>
+        </div>`).join("")}
+    </div>
+    <div class="tools"><button class="btn" data-a="add">+ Spieler</button></div>
+    <h2>Einstellungen</h2>
+    <div class="card field"><span>Ziel-Punktzahl</span><input id="target" type="number" inputmode="numeric" min="1" value="${state.target}"></div>
+    ${editing ? `<p class="hint">Bereits gespielte Runden bleiben erhalten. Neue Spieler starten mit 0.</p>` : ""}
+    <div class="bar"><div class="in"><button class="btn primary" data-a="start">${editing ? "Übernehmen" : "Spiel starten"}</button></div></div>`;
+  app.querySelectorAll(".prow input").forEach(inp => {
+    inp.oninput = () => setupNames[+inp.dataset.i].name = inp.value;
+    inp.onkeydown = e => {
+      if (e.key !== "Enter") return;
+      const next = app.querySelector(`.prow input[data-i="${+inp.dataset.i + 1}"]`);
+      if (next) next.focus(); else { act("add"); }
+    };
+  });
+}
+
+function renderBoard(){
+  const t = totals();
+  const order = [...state.players].sort((a, b) => t[b.id] - t[a.id]);
+  const max = Math.max(1, ...Object.values(t));
+  const last = state.rounds[state.rounds.length - 1];
+  const st = gameStatus();
+  const rn = state.rounds.length + 1;
+  const dealer = state.players[(rn - 1) % state.players.length];
+
+  let banner = "";
+  if (st && st.winners.length === 1) banner = `<div class="banner">🏆 ${esc(st.winners[0].name)} gewinnt mit ${st.score} Punkten!</div>`;
+  else if (st) banner = `<div class="banner tie">Gleichstand bei ${st.score}: ${st.winners.map(w=>esc(w.name)).join(" & ")}. Noch eine Runde!</div>`;
+
+  app.innerHTML = `
+    <header><h1><b>Flip 7</b> Punkte</h1><span class="sub">Ziel ${state.target}</span></header>
+    ${banner}
+    <div class="list">
+      ${order.map((p, i) => {
+        const rank = order.findIndex(q => t[q.id] === t[p.id]) + 1;
+        const h = last && last.hands[p.id];
+        const ls = h ? (h.bust ? `<span class="last b">letzte Runde: Bust</span>` : `<span class="last ${h.n.length===7?"f7":""}">letzte Runde: +${score(h)}${h.n.length===7?" Flip 7!":""}</span>`) : "";
+        return `<div class="card player ${rank===1 && t[p.id]>0 ? "lead" : ""}">
+          <span class="rank">${rank}.</span>
+          <span class="pname">${esc(p.name)} ${p.id===dealer.id && !st ? "<small>· gibt</small>" : ""}<br>${ls}</span>
+          <span class="total">${t[p.id]}</span>
+          <span class="progress"><i style="width:${Math.min(100, t[p.id] / state.target * 100)}%"></i></span>
+        </div>`;
+      }).join("")}
+    </div>
+
+    ${state.rounds.length ? `
+      <h2>Rundenverlauf <span style="text-transform:none;font-weight:400">· antippen zum Ändern</span></h2>
+      <div class="hist"><table>
+        <thead><tr><th>#</th>${state.players.map(p => `<th>${esc(p.name)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${state.rounds.map((r, i) => `<tr data-a="editRound" data-i="${i}"><td>${i+1}</td>${state.players.map(p => {
+            const h = r.hands[p.id];
+            if (!h) return `<td>–</td>`;
+            return h.bust ? `<td class="b">Bust</td>` : `<td class="${h.n.length===7?"f7":""}">${score(h)}</td>`;
+          }).join("")}</tr>`).reverse().join("")}
+        </tbody>
+      </table></div>` : `<p class="hint">Runde ${rn}: ${esc(dealer.name)} gibt.</p>`}
+
+    <h2>Menü</h2>
+    <div class="menu">
+      <button class="btn" data-a="editPlayers">Spieler / Ziel ändern</button>
+      <button class="btn" data-a="newGame">Neues Spiel</button>
+    </div>
+
+    <div class="bar"><div class="in">
+      <button class="btn primary" data-a="newRound">${st ? "Trotzdem weiterspielen" : `Runde ${rn} eintragen`}</button>
+    </div></div>`;
+}
+
+function renderRound(){
+  const p = state.players[draft.idx];
+  const h = draft.hands[p.id];
+  const s = score(h);
+  const isLast = draft.idx === state.players.length - 1;
+  const roundNo = draft.edit === null ? state.rounds.length + 1 : draft.edit + 1;
+  const full = h.n.length >= 7;
+
+  app.innerHTML = `
+    <header>
+      <h1>Runde ${roundNo}${draft.edit !== null ? " <span class='sub'>(ändern)</span>" : ""}</h1>
+      <button class="btn ghost" data-a="cancelRound">Abbrechen</button>
+    </header>
+    <div class="chips">
+      ${state.players.map((q, i) => {
+        const qh = draft.hands[q.id];
+        return `<button class="chip ${i===draft.idx?"on":""} ${qh.bust?"bust":""}" data-a="goto" data-i="${i}">${esc(q.name)} <span class="s">${qh.bust ? "Bust" : score(qh)}</span></button>`;
+      }).join("")}
+    </div>
+
+    <div class="who">
+      <span class="n">${esc(p.name)}${h.n.length===7 ? `<span class="f7badge">FLIP 7</span>` : ""}</span>
+      <span class="sc ${h.bust?"b":""}">${s}</span>
+    </div>
+    <div class="calc">${esc(calcText(h))}</div>
+
+    <div class="${h.bust ? "locked" : ""}">
+      <div class="grid">
+        ${NUMS.map(n => {
+          const on = h.n.includes(n);
+          return `<button class="num ${on?"on":""}" data-a="num" data-v="${n}" ${!on && full ? "disabled" : ""}>${n}</button>`;
+        }).join("")}
+      </div>
+      <div class="mods">
+        ${MODS.map(m => `<button class="mod ${h.m.includes(m)?"on":""}" data-a="mod" data-v="${m}">+${m}</button>`).join("")}
+        <button class="mod x2 ${h.x2?"on":""}" data-a="x2">×2</button>
+      </div>
+    </div>
+
+    <div class="tools">
+      <button class="btn bust-btn ${h.bust?"on":""}" data-a="bust">💥 Bust</button>
+      <button class="btn" data-a="clear">Leeren</button>
+    </div>
+    ${draft.edit !== null ? `<div class="tools"><button class="btn danger" data-a="deleteRound">Runde löschen</button></div>` : ""}
+    <p class="hint">Zahlenkarten antippen, die ${esc(p.name)} vor sich liegen hat. Freeze/Stopp: einfach so lassen.</p>
+
+    <div class="bar"><div class="in">
+      <button class="btn" data-a="prev" ${draft.idx===0?"disabled":""}>Zurück</button>
+      <button class="btn primary" data-a="${isLast ? "saveRound" : "next"}">${isLast ? "Runde speichern" : "Weiter"}</button>
+    </div></div>`;
+}
+
+// ---------- Aktionen ----------
+function act(a, el){
+  const i = el ? +el.dataset.i : NaN;
+  switch (a) {
+    // Setup
+    case "add": setupNames.push({id:uid(), name:""}); render();
+      app.querySelector(`.prow input[data-i="${setupNames.length-1}"]`).focus(); break;
+    case "del": setupNames.splice(i, 1); render(); break;
+    case "up": [setupNames[i-1], setupNames[i]] = [setupNames[i], setupNames[i-1]]; render(); break;
+    case "cancelSetup": setupNames = null; view = "board"; render(); break;
+    case "start": {
+      const ps = setupNames.map((p, k) => ({ id: p.id, name: p.name.trim() || `Spieler ${k+1}` }));
+      if (ps.length < 1) return alert("Mindestens ein Spieler.");
+      const tg = parseInt(document.getElementById("target").value, 10);
+      state.players = ps;
+      state.target = tg > 0 ? tg : 200;
+      setupNames = null; view = "board"; save(); render(); break;
+    }
+    // Board
+    case "editPlayers": setupNames = null; view = "setup"; render(); break;
+    case "newGame":
+      if (!confirm("Neues Spiel mit denselben Spielern starten? Alle Runden werden gelöscht.")) return;
+      state.rounds = []; save(); render(); break;
+    case "newRound":
+      draft = { hands: Object.fromEntries(state.players.map(p => [p.id, emptyHand()])), idx: 0, edit: null };
+      view = "round"; render(); scrollTo(0, 0); break;
+    case "editRound": {
+      const r = state.rounds[i];
+      draft = { hands: Object.fromEntries(state.players.map(p => [p.id, r.hands[p.id] ? JSON.parse(JSON.stringify(r.hands[p.id])) : emptyHand()])), idx: 0, edit: i };
+      view = "round"; render(); scrollTo(0, 0); break;
+    }
+    // Runde
+    case "num": case "mod": case "x2": case "bust": case "clear": {
+      const h = draft.hands[state.players[draft.idx].id];
+      const v = el && +el.dataset.v;
+      if (a === "num") h.n = h.n.includes(v) ? h.n.filter(x => x !== v) : (h.n.length < 7 ? [...h.n, v] : h.n);
+      if (a === "mod") h.m = h.m.includes(v) ? h.m.filter(x => x !== v) : [...h.m, v];
+      if (a === "x2") h.x2 = !h.x2;
+      if (a === "bust") h.bust = !h.bust;
+      if (a === "clear") Object.assign(h, emptyHand());
+      if (navigator.vibrate) navigator.vibrate(8);
+      render(); break;
+    }
+    case "goto": draft.idx = i; render(); break;
+    case "prev": draft.idx--; render(); scrollTo(0, 0); break;
+    case "next": draft.idx++; render(); scrollTo(0, 0); break;
+    case "cancelRound": draft = null; view = "board"; render(); break;
+    case "saveRound": {
+      const r = { hands: draft.hands };
+      if (draft.edit === null) state.rounds.push(r); else state.rounds[draft.edit] = r;
+      draft = null; view = "board"; save(); render(); scrollTo(0, 0); break;
+    }
+    case "deleteRound":
+      if (!confirm(`Runde ${draft.edit + 1} löschen?`)) return;
+      state.rounds.splice(draft.edit, 1); draft = null; view = "board"; save(); render(); break;
+  }
+}
+app.addEventListener("click", e => {
+  const el = e.target.closest("[data-a]");
+  if (el && !el.disabled) act(el.dataset.a, el);
+});
+
+// Bildschirm während des Spiels anlassen
+let lock = null;
+async function keepAwake(){ try { if ("wakeLock" in navigator && document.visibilityState === "visible") lock = await navigator.wakeLock.request("screen"); } catch {} }
+document.addEventListener("visibilitychange", keepAwake);
+keepAwake();
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+render();
+</script>
+</body>
+</html>
